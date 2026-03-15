@@ -1,0 +1,25 @@
+{
+  "project": "mindspace",
+  "current_stage": 1,
+  "last_updated": "2026-03-15",
+  "stages": {
+    "1": {
+      "name": "Foundation + Capture + Retrieve",
+      "status": "done",
+      "items": [
+        {"id": "1.01", "name": "Project scaffolding", "status": "done", "files": ["pyproject.toml", ".gitignore", ".env.example"]},
+        {"id": "1.02", "name": "Core models", "status": "done", "files": ["src/mindspace/core/models.py", "src/mindspace/core/ids.py"]},
+        {"id": "1.03", "name": "Config + paths", "status": "done", "files": ["src/mindspace/infra/config.py", "src/mindspace/infra/paths.py"]},
+        {"id": "1.04", "name": "Capture store", "status": "done", "files": ["src/mindspace/capture/store.py"]},
+        {"id": "1.05", "name": "URL extraction", "status": "done", "files": ["src/mindspace/capture/extractors.py"]},
+        {"id": "1.06", "name": "Embedding adapter", "status": "done", "files": ["src/mindspace/infra/embedder.py"]},
+        {"id": "1.07", "name": "Vector DB adapter", "status": "done", "files": ["src/mindspace/infra/vectordb.py"]},
+        {"id": "1.08", "name": "Embedding pipeline", "status": "done", "files": ["src/mindspace/derived/embeddings.py", "src/mindspace/derived/registry.py"]},
+        {"id": "1.09", "name": "Ingest + reindex pipelines", "status": "done", "files": ["src/mindspace/pipelines/ingest.py", "src/mindspace/pipelines/reindex.py"]},
+        {"id": "1.10", "name": "CLI commands", "status": "done", "files": ["src/mindspace/cli/app.py", "src/mindspace/cli/capture.py", "src/mindspace/cli/search.py", "src/mindspace/cli/admin.py"]},
+        {"id": "1.11", "name": "Tests", "status": "done", "files": ["tests/"]},
+        {"id": "1.12", "name": "Git init + first commit", "status": "done", "files": []}
+      ]
+    }
+  }
+}
