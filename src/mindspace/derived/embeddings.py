@@ -152,12 +152,15 @@ class EmbeddingPipeline:
         # RRF score = sum(1 / (k + rank)) across retrieval methods
         chunk_scores: dict[str, float] = {}
         chunk_data: dict[str, tuple[str, dict]] = {}
+        chunk_distances: dict[str, float] = {}
 
         # Semantic RRF scores
         for rank, (chunk_id, distance, document, metadata) in enumerate(semantic_ranked):
             chunk_scores[chunk_id] = chunk_scores.get(chunk_id, 0) + 1.0 / (rrf_k + rank + 1)
             if chunk_id not in chunk_data:
                 chunk_data[chunk_id] = (document, metadata)
+            if chunk_id not in chunk_distances or distance < chunk_distances[chunk_id]:
+                chunk_distances[chunk_id] = distance
 
         # BM25 RRF scores
         for rank, (chunk_id, _score) in enumerate(bm25_ranked):
@@ -186,7 +189,7 @@ class EmbeddingPipeline:
             results.append({
                 "id": capture_id,
                 "document": document,
-                "distance": 1.0 - rrf_score,  # Convert to distance-like metric
+                "distance": chunk_distances.get(chunk_id, 1.0),
                 "metadata": metadata,
             })
             if len(results) >= n_results:
