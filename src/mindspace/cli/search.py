@@ -6,7 +6,7 @@ from typing import Optional
 import typer
 from rich.console import Console
 from rich.panel import Panel
-from rich.table import Table
+from rich.text import Text
 
 from mindspace.capture import store
 from mindspace.derived.embeddings import EmbeddingPipeline
@@ -14,11 +14,14 @@ from mindspace.derived.embeddings import EmbeddingPipeline
 search_app = typer.Typer(no_args_is_help=True)
 console = Console()
 
+MIN_RELEVANCE_SCORE = 0.20
+
 
 @search_app.command("query")
 def search_query(
     query_text: str = typer.Argument(help="Search query"),
     num: int = typer.Option(5, "--num", "-n", help="Number of results"),
+    all: bool = typer.Option(False, "--all", help="Show all results (ignore relevance threshold)"),
 ) -> None:
     """Semantic search across all captures."""
     pipeline = EmbeddingPipeline()
@@ -28,23 +31,48 @@ def search_query(
         console.print("[dim]No results found.[/dim]")
         return
 
-    table = Table(title=f"Results for: {query_text}")
-    table.add_column("ID", style="dim", width=28)
-    table.add_column("Type", width=10)
-    table.add_column("Score", width=8)
-    table.add_column("Preview", overflow="fold")
+    # Filter by relevance unless --all
+    if not all:
+        results = [r for r in results if (1 - r["distance"]) >= MIN_RELEVANCE_SCORE]
 
-    for hit in results:
-        score = f"{1 - hit['distance']:.3f}"
-        preview = hit["document"][:120] + "..." if len(hit["document"]) > 120 else hit["document"]
-        table.add_row(
-            hit["id"],
-            hit["metadata"].get("type", ""),
-            score,
-            preview,
+    if not results:
+        console.print("[dim]No relevant results found.[/dim] Use [bold]--all[/bold] to see low-relevance matches.")
+        return
+
+    console.print()
+    for i, hit in enumerate(results):
+        score = 1 - hit["distance"]
+        ctype = hit["metadata"].get("type", "")
+        tags = hit["metadata"].get("tags", "")
+        doc = hit["document"]
+
+        # Truncate preview to ~200 chars at a word boundary
+        if len(doc) > 200:
+            preview = doc[:200].rsplit(" ", 1)[0] + "..."
+        else:
+            preview = doc
+
+        # Score color
+        if score >= 0.5:
+            score_style = "green bold"
+        elif score >= 0.3:
+            score_style = "yellow"
+        else:
+            score_style = "dim"
+
+        # Header line
+        console.print(
+            f"  [{score_style}]{score:.0%}[/{score_style}]  "
+            f"[bold]{ctype}[/bold]  "
+            f"[dim]{hit['id']}[/dim]"
+            + (f"  [cyan]#{tags.replace(',', ' #')}[/cyan]" if tags else "")
         )
+        # Preview
+        console.print(f"       {preview}")
+        if i < len(results) - 1:
+            console.print()
 
-    console.print(table)
+    console.print()
 
 
 @search_app.command("show")

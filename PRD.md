@@ -33,6 +33,20 @@ Event-sourced, strict layer separation. Each layer depends only downward:
 - **Pipelines** — Orchestration wiring
 - **CLI** — Presentation layer, replaceable
 
+## Evaluation Philosophy
+
+**You can't improve what you can't measure.** (Inspired by Hamel Husain)
+
+Retrieval quality is evaluated through a domain-specific, hand-curated golden dataset — not generic frameworks like RAGAS or TruLens. The eval framework follows these principles:
+
+- **Eval first, improve second** — every retrieval change is measured before/after
+- **Binary pass/fail** — a case passes if expected captures appear in top-k results
+- **Simple tooling** — JSON files, pytest, CLI commands. No frameworks.
+- **Domain-specific** — golden dataset is curated from your actual captures and queries
+- **Extensible** — Stage 2 adds RAG Triad metrics (Groundedness, Answer Relevance) when generation is introduced
+
+Metrics tracked: Precision@k, Recall@k, MRR (Mean Reciprocal Rank), Hit Rate, Negative Leakage.
+
 ## Modes (Future)
 
 - **Passive:** Background processing on ingest

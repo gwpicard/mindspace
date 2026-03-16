@@ -1,15 +1,29 @@
 """Application configuration via environment variables."""
 
-from pydantic_settings import BaseSettings
+from pydantic import Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = {"env_prefix": "MINDSPACE_"}
+    model_config = SettingsConfigDict(
+        env_prefix="MINDSPACE_",
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
-    openai_api_key: str = ""
+    # Reads OPENAI_API_KEY (no prefix) since it's a standard env var
+    openai_api_key: str = Field(default="", validation_alias="OPENAI_API_KEY")
     embedding_model: str = "text-embedding-3-small"
     embedding_dimensions: int = 1536
     data_dir: str = "./data"
+
+    # Chunking
+    chunk_max_tokens: int = 500
+    chunk_overlap_tokens: int = 50
+
+    # Hybrid search
+    hybrid_search_enabled: bool = True
 
 
 _settings: Settings | None = None

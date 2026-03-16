@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "cases": [
+    {
+      "query": "machine learning and neural networks",
+      "expected_ids": ["cap_ml_001"],
+      "negative_ids": ["cap_cooking_001"],
+      "notes": "Should find ML content, not cooking"
+    },
+    {
+      "query": "best pasta recipe",
+      "expected_ids": ["cap_cooking_001"],
+      "negative_ids": ["cap_ml_001"],
+      "notes": "Should find cooking content, not ML"
+    },
+    {
+      "query": "software development practices",
+      "expected_ids": ["cap_dev_001"],
+      "negative_ids": [],
+      "notes": "Should find dev content"
+    }
+  ]
+}

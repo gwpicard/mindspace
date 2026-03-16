@@ -30,8 +30,24 @@ def index_path() -> Path:
     return data_root() / "index.jsonl"
 
 
+def eval_dir() -> Path:
+    """Directory for evaluation data (golden dataset, history)."""
+    return data_root() / "eval"
+
+
+def golden_path() -> Path:
+    """Path to the golden evaluation dataset."""
+    return eval_dir() / "golden.json"
+
+
+def eval_history_path() -> Path:
+    """Path to the JSONL evaluation history."""
+    return eval_dir() / "history.jsonl"
+
+
 def ensure_dirs() -> None:
     """Create all required data directories."""
     raw_dir().mkdir(parents=True, exist_ok=True)
     derived_dir().mkdir(parents=True, exist_ok=True)
     chroma_dir().mkdir(parents=True, exist_ok=True)
+    eval_dir().mkdir(parents=True, exist_ok=True)

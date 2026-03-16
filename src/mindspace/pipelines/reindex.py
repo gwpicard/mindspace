@@ -3,6 +3,8 @@
 from mindspace.capture import store
 from mindspace.derived.embeddings import EmbeddingPipeline
 from mindspace.derived.registry import DerivationRegistry
+from mindspace.infra.config import get_settings
+from mindspace.infra.keyword_index import KeywordIndex
 from mindspace.infra.vectordb import VectorDB
 
 
@@ -22,8 +24,19 @@ def reindex(
     vectordb.delete_all()
     registry.clear()
 
+    # Clear keyword index
+    settings = get_settings()
+    keyword_index = None
+    if settings.hybrid_search_enabled:
+        keyword_index = KeywordIndex()
+        keyword_index.clear()
+
     # Re-derive
-    pipeline = pipeline or EmbeddingPipeline(vectordb=vectordb, registry=registry)
+    pipeline = pipeline or EmbeddingPipeline(
+        vectordb=vectordb,
+        registry=registry,
+        keyword_index=keyword_index,
+    )
     captures = store.iterate_all()
     embedded = 0
     skipped = 0

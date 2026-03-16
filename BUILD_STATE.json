@@ -1,6 +1,6 @@
 {
   "project": "mindspace",
-  "current_stage": 1,
+  "current_stage": 1.5,
   "last_updated": "2026-03-15",
   "stages": {
     "1": {
@@ -19,6 +19,19 @@
         {"id": "1.10", "name": "CLI commands", "status": "done", "files": ["src/mindspace/cli/app.py", "src/mindspace/cli/capture.py", "src/mindspace/cli/search.py", "src/mindspace/cli/admin.py"]},
         {"id": "1.11", "name": "Tests", "status": "done", "files": ["tests/"]},
         {"id": "1.12", "name": "Git init + first commit", "status": "done", "files": []}
+      ]
+    },
+    "1.5": {
+      "name": "Retrieval Quality + Evaluation Framework",
+      "status": "done",
+      "items": [
+        {"id": "1.5.01", "name": "Eval types + metrics", "status": "done", "files": ["src/mindspace/eval/__init__.py", "src/mindspace/eval/types.py", "src/mindspace/eval/metrics.py", "tests/eval/__init__.py", "tests/eval/test_metrics.py"]},
+        {"id": "1.5.02", "name": "Eval runner + history", "status": "done", "files": ["src/mindspace/eval/runner.py", "src/mindspace/eval/history.py", "tests/eval/test_runner.py"]},
+        {"id": "1.5.03", "name": "Eval CLI + golden dataset seeding", "status": "done", "files": ["src/mindspace/cli/eval.py", "src/mindspace/cli/app.py"]},
+        {"id": "1.5.04", "name": "Chunking for long captures", "status": "done", "files": ["src/mindspace/derived/chunker.py", "src/mindspace/derived/embeddings.py", "src/mindspace/infra/config.py", "tests/derived/test_chunker.py"]},
+        {"id": "1.5.05", "name": "Hybrid search (BM25 + semantic)", "status": "done", "files": ["src/mindspace/infra/keyword_index.py", "src/mindspace/derived/embeddings.py", "src/mindspace/pipelines/reindex.py", "pyproject.toml"]},
+        {"id": "1.5.06", "name": "Text enrichment for embeddings", "status": "done", "files": ["src/mindspace/derived/text_prep.py", "src/mindspace/derived/embeddings.py"]},
+        {"id": "1.5.07", "name": "Retrieval regression tests + eval paths", "status": "done", "files": ["tests/eval/test_retrieval_quality.py", "tests/eval/fixtures/golden_test.json", "src/mindspace/infra/paths.py"]}
       ]
     }
   }
