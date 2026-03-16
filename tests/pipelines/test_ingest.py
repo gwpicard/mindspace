@@ -54,9 +54,8 @@ def test_ingest_question(tmp_data_dir):
     pipeline = _make_pipeline(tmp_data_dir)
     capture = ingest.ingest_question(
         text="What is the impact of LLMs on software?",
-        domain="AI",
         urgency="active",
-        tags=["research"],
+        tags=["ai", "research"],
         pipeline=pipeline,
     )
     assert capture.type.value == "question"
@@ -100,6 +99,31 @@ def test_ingest_reaction(tmp_data_dir):
     assert reaction.type.value == "reaction"
     assert reaction.content.reacting_to == original.id
     assert original.id in reaction.context.related_ids
+
+
+def test_ingest_repo(tmp_data_dir):
+    pipeline = _make_pipeline(tmp_data_dir)
+
+    with patch("mindspace.pipelines.ingest.extract_repo") as mock_extract:
+        mock_extract.return_value = {
+            "url": "https://github.com/owner/repo",
+            "owner": "owner",
+            "repo_name": "repo",
+            "description": "A test repo",
+            "stars": 42,
+            "language": "Python",
+            "topics": ["testing"],
+            "readme_text": "# Repo\nHello world",
+            "last_updated": "2026-03-15T00:00:00Z",
+        }
+        capture = ingest.ingest_repo(
+            "https://github.com/owner/repo", tags=["test"], pipeline=pipeline
+        )
+
+    assert capture.type.value == "repo"
+    assert capture.content.owner == "owner"
+    assert capture.content.repo_name == "repo"
+    assert store.exists(capture.id)
 
 
 def test_ingest_reaction_invalid_id(tmp_data_dir):

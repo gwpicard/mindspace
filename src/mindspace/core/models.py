@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+PROCESS_VERSION = 2
+
 from datetime import datetime, timezone
 from enum import Enum
 from typing import Annotated, Literal, Union
@@ -25,6 +27,7 @@ class CaptureType(str, Enum):
     thought = "thought"
     reaction = "reaction"
     question = "question"
+    repo = "repo"
 
 
 class ThinkingType(str, Enum):
@@ -83,12 +86,23 @@ class ReactionContent(BaseModel):
 
 class QuestionContent(BaseModel):
     text: str
-    domain: str | None = None
     urgency: Urgency = Urgency.background
 
 
+class RepoContent(BaseModel):
+    url: str
+    owner: str
+    repo_name: str
+    description: str | None = None
+    stars: int | None = None
+    language: str | None = None
+    topics: list[str] = Field(default_factory=list)
+    readme_text: str | None = None
+    last_updated: str | None = None
+
+
 ContentType = Annotated[
-    Union[URLContent, SnippetContent, ThoughtContent, ReactionContent, QuestionContent],
+    Union[URLContent, SnippetContent, ThoughtContent, ReactionContent, QuestionContent, RepoContent],
     Field(discriminator=None),
 ]
 
@@ -116,6 +130,7 @@ CAPTURE_TYPE_TO_CONTENT = {
     CaptureType.thought: ThoughtContent,
     CaptureType.reaction: ReactionContent,
     CaptureType.question: QuestionContent,
+    CaptureType.repo: RepoContent,
 }
 
 CAPTURE_TYPE_TO_STREAM = {
@@ -124,6 +139,7 @@ CAPTURE_TYPE_TO_STREAM = {
     CaptureType.thought: Stream.internal,
     CaptureType.reaction: Stream.internal,
     CaptureType.question: Stream.internal,
+    CaptureType.repo: Stream.external,
 }
 
 
@@ -151,5 +167,8 @@ class Capture(BaseModel):
                 return text
             case QuestionContent(text=text):
                 return text
+            case RepoContent(repo_name=name, description=desc, readme_text=readme):
+                parts = [p for p in [name, desc, readme] if p]
+                return " ".join(parts)
             case _:
                 return ""

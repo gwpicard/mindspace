@@ -20,6 +20,11 @@ def derived_dir() -> Path:
     return data_root() / "derived"
 
 
+def enriched_dir() -> Path:
+    """Directory for enriched/reprocessed content."""
+    return derived_dir() / "enriched"
+
+
 def chroma_dir() -> Path:
     """Directory for ChromaDB persistent storage."""
     return derived_dir() / "chroma"
@@ -49,5 +54,6 @@ def ensure_dirs() -> None:
     """Create all required data directories."""
     raw_dir().mkdir(parents=True, exist_ok=True)
     derived_dir().mkdir(parents=True, exist_ok=True)
+    enriched_dir().mkdir(parents=True, exist_ok=True)
     chroma_dir().mkdir(parents=True, exist_ok=True)
     eval_dir().mkdir(parents=True, exist_ok=True)

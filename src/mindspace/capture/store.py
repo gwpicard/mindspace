@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from mindspace.core.models import Capture
+from mindspace.core.models import PROCESS_VERSION, Capture
 from mindspace.infra.paths import index_path, raw_dir
 
 
@@ -67,6 +67,20 @@ def count_by_stream() -> dict[str, int]:
     return counts
 
 
+def all_tags() -> list[tuple[str, int]]:
+    """Return all tags sorted by frequency (descending)."""
+    counts: dict[str, int] = {}
+    idx = index_path()
+    if idx.exists():
+        for line in idx.read_text().splitlines():
+            if not line.strip():
+                continue
+            entry = json.loads(line)
+            for tag in entry.get("tags", []):
+                counts[tag] = counts.get(tag, 0) + 1
+    return sorted(counts.items(), key=lambda x: x[1], reverse=True)
+
+
 def _append_index(capture: Capture) -> None:
     """Append a capture summary to the JSONL index."""
     entry = {
@@ -75,6 +89,7 @@ def _append_index(capture: Capture) -> None:
         "stream": capture.stream.value,
         "created_at": capture.created_at.isoformat(),
         "tags": capture.context.tags,
+        "process_version": PROCESS_VERSION,
     }
     with open(index_path(), "a") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")

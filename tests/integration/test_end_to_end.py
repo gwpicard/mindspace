@@ -59,7 +59,7 @@ def test_capture_embed_search_roundtrip(tmp_data_dir):
     )
     c3 = ingest.ingest_question(
         text="How will AI agents transform software development workflows?",
-        domain="AI",
+        tags=["ai"],
         pipeline=pipeline,
     )
 

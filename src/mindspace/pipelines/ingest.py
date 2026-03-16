@@ -1,7 +1,7 @@
 """Ingest pipeline — orchestrates capture save + embedding derivation."""
 
 from mindspace.capture import store
-from mindspace.capture.extractors import extract_url
+from mindspace.capture.extractors import extract_repo, extract_url
 from mindspace.core.models import (
     CAPTURE_TYPE_TO_STREAM,
     Capture,
@@ -9,6 +9,7 @@ from mindspace.core.models import (
     CaptureType,
     QuestionContent,
     ReactionContent,
+    RepoContent,
     SnippetContent,
     ThoughtContent,
     URLContent,
@@ -81,7 +82,6 @@ def ingest_thought(
 
 def ingest_question(
     text: str,
-    domain: str | None = None,
     urgency: str = "background",
     tags: list[str] | None = None,
     pipeline: EmbeddingPipeline | None = None,
@@ -89,10 +89,30 @@ def ingest_question(
     """Capture a question."""
     from mindspace.core.models import Urgency
 
-    content = QuestionContent(text=text, domain=domain, urgency=Urgency(urgency))
+    content = QuestionContent(text=text, urgency=Urgency(urgency))
     capture = Capture(
         stream=CAPTURE_TYPE_TO_STREAM[CaptureType.question],
         type=CaptureType.question,
+        content=content,
+        context=CaptureContext(tags=tags or []),
+    )
+    store.save(capture)
+    pipeline = pipeline or EmbeddingPipeline()
+    pipeline.embed_capture(capture)
+    return capture
+
+
+def ingest_repo(
+    url: str,
+    tags: list[str] | None = None,
+    pipeline: EmbeddingPipeline | None = None,
+) -> Capture:
+    """Capture a GitHub repo: fetch metadata + README, save, embed."""
+    extracted = extract_repo(url)
+    content = RepoContent(**extracted)
+    capture = Capture(
+        stream=CAPTURE_TYPE_TO_STREAM[CaptureType.repo],
+        type=CaptureType.repo,
         content=content,
         context=CaptureContext(tags=tags or []),
     )

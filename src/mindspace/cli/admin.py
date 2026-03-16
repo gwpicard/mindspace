@@ -9,6 +9,7 @@ from mindspace.derived.registry import DerivationRegistry
 from mindspace.infra.paths import ensure_dirs, data_root
 from mindspace.infra.vectordb import VectorDB
 from mindspace.pipelines.reindex import reindex
+from mindspace.pipelines.reprocess import reprocess
 
 admin_app = typer.Typer(no_args_is_help=True)
 console = Console()
@@ -63,3 +64,20 @@ def admin_reindex() -> None:
     with console.status("Reindexing all captures..."):
         stats = reindex()
     console.print(f"[green]Reindexed:[/green] {stats['embedded']} embedded, {stats['skipped']} skipped (of {stats['total']} total)")
+
+
+@admin_app.command("reprocess")
+def admin_reprocess() -> None:
+    """Re-extract content for all captures and rebuild embeddings."""
+    with console.status("Reprocessing all captures..."):
+        stats = reprocess()
+    console.print(
+        f"[green]Reprocessed:[/green] {stats['enriched']} enriched, "
+        f"{stats['skipped']} skipped (of {stats['total']} total)"
+    )
+    if "reindex" in stats:
+        ri = stats["reindex"]
+        console.print(
+            f"[green]Reindexed:[/green] {ri['embedded']} embedded, "
+            f"{ri['skipped']} skipped"
+        )
