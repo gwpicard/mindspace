@@ -126,6 +126,52 @@ def test_ingest_repo(tmp_data_dir):
     assert store.exists(capture.id)
 
 
+def test_ingest_url_duplicate(tmp_data_dir):
+    pipeline = _make_pipeline(tmp_data_dir)
+
+    with patch("mindspace.pipelines.ingest.extract_url") as mock_extract:
+        mock_extract.return_value = {
+            "url": "https://example.com/page",
+            "title": "Example",
+            "extracted_text": "Content",
+            "excerpt": "Content",
+            "author": None,
+            "word_count": 1,
+            "language": None,
+            "extraction_method": "trafilatura",
+            "raw_html_hash": "abc",
+        }
+        capture1 = ingest.ingest_url("https://example.com/page", pipeline=pipeline)
+
+        import pytest
+        with pytest.raises(ingest.DuplicateError) as exc_info:
+            ingest.ingest_url("https://example.com/page", pipeline=pipeline)
+        assert exc_info.value.existing.id == capture1.id
+
+
+def test_ingest_repo_duplicate(tmp_data_dir):
+    pipeline = _make_pipeline(tmp_data_dir)
+
+    with patch("mindspace.pipelines.ingest.extract_repo") as mock_extract:
+        mock_extract.return_value = {
+            "url": "https://github.com/owner/repo",
+            "owner": "owner",
+            "repo_name": "repo",
+            "description": "A test repo",
+            "stars": 42,
+            "language": "Python",
+            "topics": ["testing"],
+            "readme_text": "# Repo\nHello",
+            "last_updated": "2026-03-15T00:00:00Z",
+        }
+        capture1 = ingest.ingest_repo("https://github.com/owner/repo", pipeline=pipeline)
+
+        import pytest
+        with pytest.raises(ingest.DuplicateError) as exc_info:
+            ingest.ingest_repo("https://github.com/owner/repo", pipeline=pipeline)
+        assert exc_info.value.existing.id == capture1.id
+
+
 def test_ingest_reaction_invalid_id(tmp_data_dir):
     pipeline = _make_pipeline(tmp_data_dir)
 

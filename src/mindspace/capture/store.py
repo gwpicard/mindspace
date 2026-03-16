@@ -81,6 +81,38 @@ def all_tags() -> list[tuple[str, int]]:
     return sorted(counts.items(), key=lambda x: x[1], reverse=True)
 
 
+def find_by_url(url: str) -> Capture | None:
+    """Find an existing capture by URL (for url and repo types)."""
+    for path in raw_dir().glob("*.json"):
+        data = json.loads(path.read_text())
+        content = data.get("content", {})
+        if content.get("url") == url:
+            return _deserialize(data)
+    return None
+
+
+def rebuild_index() -> int:
+    """Rebuild JSONL index from raw capture files. Returns count."""
+    idx = index_path()
+    captures = []
+    for path in sorted(raw_dir().glob("*.json")):
+        data = json.loads(path.read_text())
+        captures.append(_deserialize(data))
+    # Overwrite the index
+    with open(idx, "w") as f:
+        for capture in captures:
+            entry = {
+                "id": capture.id,
+                "type": capture.type.value,
+                "stream": capture.stream.value,
+                "created_at": capture.created_at.isoformat(),
+                "tags": capture.context.tags,
+                "process_version": PROCESS_VERSION,
+            }
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    return len(captures)
+
+
 def _append_index(capture: Capture) -> None:
     """Append a capture summary to the JSONL index."""
     entry = {

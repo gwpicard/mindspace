@@ -9,6 +9,7 @@ from typing import Optional
 import typer
 from rich.console import Console
 
+from mindspace.pipelines.ingest import DuplicateError
 from mindspace.pipelines import ingest
 
 capture_app = typer.Typer(no_args_is_help=True)
@@ -60,8 +61,12 @@ def url(
     tag: Optional[list[str]] = typer.Option(None, "--tag", "-t", help="Tags"),
 ) -> None:
     """Capture a URL (auto-extracts content)."""
-    with console.status("Extracting and embedding..."):
-        capture = ingest.ingest_url(target_url, tags=_parse_tags(tag))
+    try:
+        with console.status("Extracting and embedding..."):
+            capture = ingest.ingest_url(target_url, tags=_parse_tags(tag))
+    except DuplicateError as e:
+        console.print(f"[yellow]Already captured as[/yellow] [dim]{e.existing.id}[/dim] ({e.existing.created_at:%Y-%m-%d})")
+        return
     console.print(f"[green]Captured[/green] {capture.type.value} [dim]{capture.id}[/dim]")
     if hasattr(capture.content, "title") and capture.content.title:
         console.print(f"  Title: {capture.content.title}")
@@ -82,8 +87,12 @@ def repo(
     tag: Optional[list[str]] = typer.Option(None, "--tag", "-t", help="Tags"),
 ) -> None:
     """Capture a GitHub repo (README + metadata)."""
-    with console.status("Fetching repo metadata..."):
-        capture = ingest.ingest_repo(repo_url, tags=_parse_tags(tag))
+    try:
+        with console.status("Fetching repo metadata..."):
+            capture = ingest.ingest_repo(repo_url, tags=_parse_tags(tag))
+    except DuplicateError as e:
+        console.print(f"[yellow]Already captured as[/yellow] [dim]{e.existing.id}[/dim] ({e.existing.created_at:%Y-%m-%d})")
+        return
     console.print(f"[green]Captured[/green] repo [dim]{capture.id}[/dim]")
     content = capture.content
     console.print(f"  Repo: {content.owner}/{content.repo_name}")

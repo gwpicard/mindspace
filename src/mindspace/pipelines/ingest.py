@@ -17,12 +17,23 @@ from mindspace.core.models import (
 from mindspace.derived.embeddings import EmbeddingPipeline
 
 
+class DuplicateError(Exception):
+    """Raised when a capture with the same URL already exists."""
+
+    def __init__(self, existing: Capture):
+        self.existing = existing
+        super().__init__(f"Already captured as {existing.id}")
+
+
 def ingest_url(
     url: str,
     tags: list[str] | None = None,
     pipeline: EmbeddingPipeline | None = None,
 ) -> Capture:
     """Capture a URL: fetch, extract, save, embed."""
+    existing = store.find_by_url(url)
+    if existing:
+        raise DuplicateError(existing)
     extracted = extract_url(url)
     content = URLContent(**extracted)
     capture = Capture(
@@ -108,6 +119,9 @@ def ingest_repo(
     pipeline: EmbeddingPipeline | None = None,
 ) -> Capture:
     """Capture a GitHub repo: fetch metadata + README, save, embed."""
+    existing = store.find_by_url(url)
+    if existing:
+        raise DuplicateError(existing)
     extracted = extract_repo(url)
     content = RepoContent(**extracted)
     capture = Capture(
