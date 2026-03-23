@@ -186,7 +186,7 @@
 					</button>
 				{/each}
 				<div class="channel-add-wrapper">
-					<button class="channel-add-btn" onclick={() => (showChannelDropdown = !showChannelDropdown)}>
+					<button class="channel-add-btn" data-testid="add-channel-btn" onclick={() => (showChannelDropdown = !showChannelDropdown)}>
 						+ Add channel
 					</button>
 					{#if showChannelDropdown}

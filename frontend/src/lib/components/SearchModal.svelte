@@ -66,15 +66,17 @@
 
 {#if $searchOpen}
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="overlay" onclick={close} onkeydown={handleKeydown}>
+	<div class="overlay" data-testid="search-modal" onclick={close} onkeydown={handleKeydown}>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="modal" onclick={(e) => e.stopPropagation()} onkeydown={handleKeydown}>
 			<input
 				bind:this={inputEl}
+				data-testid="search-input"
 				type="text"
 				placeholder="Search your mind..."
 				value={$searchQuery}
 				oninput={onInput}
+				onkeydown={handleKeydown}
 			/>
 
 			{#if $searching}

@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from mindspace.infra.paths import ensure_dirs
@@ -68,6 +69,18 @@ def create_app() -> FastAPI:
     @app.get("/api/health")
     async def health():
         return {"status": "ok"}
+
+    # Test-only reset endpoint
+    if os.environ.get("MINDSPACE_TEST_MODE") == "1":
+        @app.post("/_test/reset", status_code=204)
+        async def test_reset():
+            from mindspace.web.db.models import Base
+            from mindspace.web.db.engine import get_engine
+            engine = get_engine()
+            async with engine.begin() as conn:
+                for table in reversed(Base.metadata.sorted_tables):
+                    await conn.execute(table.delete())
+            return Response(status_code=204)
 
     # Serve frontend static files (built SvelteKit SPA)
     frontend_dist = Path(__file__).resolve().parent.parent.parent.parent / "frontend" / "dist"

@@ -8,6 +8,21 @@
 	import { onMount } from 'svelte';
 
 	let tab = $state<'conversations' | 'channels' | 'library'>('conversations');
+	let confirming = $state<string | null>(null);
+
+	async function handleDeleteConv(e: Event, convId: string) {
+		e.preventDefault();
+		e.stopPropagation();
+		if (confirming === convId) {
+			await removeConversation(convId);
+			confirming = null;
+			if (page.url.pathname === `/conversation/${convId}`) {
+				goto('/');
+			}
+		} else {
+			confirming = convId;
+		}
+	}
 
 	onMount(() => {
 		loadConversations();
@@ -55,13 +70,13 @@
 	<div class="sidebar-header">
 		<h1 class="logo">mindspace</h1>
 		<div class="header-actions">
-			<button class="icon-btn" onclick={openSearch} title="Search (Cmd+K)">
+			<button class="icon-btn" data-testid="search-btn" onclick={openSearch} title="Search (Cmd+K)">
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<circle cx="11" cy="11" r="8"></circle>
 					<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
 				</svg>
 			</button>
-			<button class="icon-btn" onclick={newConversation} title="New conversation">
+			<button class="icon-btn" data-testid="new-conv-btn" onclick={newConversation} title="New conversation">
 				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 					<line x1="12" y1="5" x2="12" y2="19"></line>
 					<line x1="5" y1="12" x2="19" y2="12"></line>
@@ -86,9 +101,20 @@
 		{#if tab === 'conversations'}
 			{#each $conversations as conv (conv.id)}
 				{@const active = page.url.pathname === `/conversation/${conv.id}`}
-				<a href="/conversation/{conv.id}" class="item" class:active>
+				<a href="/conversation/{conv.id}" class="item" class:active data-testid="conv-item">
 					<span class="item-title">{conv.title || 'Untitled'}</span>
-					<span class="item-date">{formatDate(conv.updated_at)}</span>
+					<span class="item-actions">
+						<span class="item-date">{formatDate(conv.updated_at)}</span>
+						<button
+							class="delete-btn"
+							class:confirm={confirming === conv.id}
+							data-testid="delete-conv"
+							onclick={(e) => handleDeleteConv(e, conv.id)}
+							title={confirming === conv.id ? 'Click again to confirm' : 'Delete conversation'}
+						>
+							{confirming === conv.id ? '?' : '×'}
+						</button>
+					</span>
 				</a>
 			{/each}
 			{#if $conversations.length === 0}
@@ -242,10 +268,50 @@
 		color: var(--type-color);
 	}
 
+	.item-actions {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		flex-shrink: 0;
+		margin-left: 8px;
+	}
+
 	.item-date {
 		font-size: 11px;
 		color: var(--text-secondary);
 		flex-shrink: 0;
+	}
+
+	.delete-btn {
+		width: 20px;
+		height: 20px;
+		border-radius: 4px;
+		border: none;
+		background: transparent;
+		color: var(--text-secondary);
+		cursor: pointer;
+		font-size: 14px;
+		line-height: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		opacity: 0;
+		transition: opacity 0.1s;
+	}
+
+	.item:hover .delete-btn {
+		opacity: 1;
+	}
+
+	.delete-btn:hover {
+		background: var(--bg-tertiary);
+		color: #ef4444;
+	}
+
+	.delete-btn.confirm {
+		opacity: 1;
+		color: #ef4444;
+		background: rgba(239, 68, 68, 0.1);
 	}
 
 	.empty {
