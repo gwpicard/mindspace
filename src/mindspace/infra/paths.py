@@ -50,6 +50,11 @@ def eval_history_path() -> Path:
     return eval_dir() / "history.jsonl"
 
 
+def db_path() -> Path:
+    """Path to the SQLite database."""
+    return data_root() / "mindspace.db"
+
+
 def ensure_dirs() -> None:
     """Create all required data directories."""
     raw_dir().mkdir(parents=True, exist_ok=True)

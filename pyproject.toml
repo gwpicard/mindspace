@@ -4,9 +4,7 @@ version = "0.1.0"
 description = "Personal Intelligence System"
 requires-python = ">=3.12"
 dependencies = [
-    "typer>=0.15",
-    "rich>=13.0",
-    "pydantic>=2.10",
+"pydantic>=2.10",
     "pydantic-settings>=2.6",
     "python-ulid>=3.0",
     "trafilatura>=2.0",
@@ -15,17 +13,23 @@ dependencies = [
     "openai>=1.60",
     "python-dotenv>=1.0",
     "rank-bm25>=0.2.2",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "sqlalchemy[asyncio]>=2.0",
+    "aiosqlite>=0.21",
+    "anthropic>=0.52",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+    "pytest-asyncio>=0.25",
     "pytest-cov",
     "ruff",
 ]
 
 [project.scripts]
-ms = "mindspace.cli.app:app"
+mindspace-web = "mindspace.web.app:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -44,3 +48,4 @@ select = ["E", "F", "I", "N", "UP", "B", "SIM"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+

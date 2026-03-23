@@ -25,6 +25,14 @@ class Settings(BaseSettings):
     # Hybrid search
     hybrid_search_enabled: bool = True
 
+    # Web server
+    server_host: str = "127.0.0.1"
+    server_port: int = 8000
+
+    # Claude API
+    anthropic_api_key: str = Field(default="", validation_alias="ANTHROPIC_API_KEY")
+    claude_model: str = "claude-sonnet-4-20250514"
+
 
 _settings: Settings | None = None
 

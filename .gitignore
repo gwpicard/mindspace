@@ -18,6 +18,7 @@ htmlcov/
 
 # Mindspace data (user-specific, not committed)
 data/
+*.db
 
 # IDE
 .idea/
