@@ -1,0 +1,32 @@
+{
+  "name": "Mindspace",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "forwardPorts": [8000, 5173],
+  "portsAttributes": {
+    "8000": { "label": "Backend API" },
+    "5173": { "label": "Frontend Dev" }
+  },
+  "postCreateCommand": "uv sync && cd frontend && npm install && npx playwright install --with-deps chromium",
+  "postStartCommand": "",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "svelte.svelte-vscode",
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "ms-playwright.playwright"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": ".venv/bin/python"
+      }
+    }
+  },
+  "containerEnv": {
+    "MINDSPACE_DATA_DIR": "/workspaces/mindspace/data"
+  },
+  "mounts": [],
+  "remoteUser": "vscode"
+}
