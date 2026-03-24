@@ -13,31 +13,64 @@ A personal intelligence system that ingests what you encounter (articles, URLs) 
 
 ## Quick Start
 
+### Web App (recommended)
+
 ```bash
 # Clone
 git clone https://github.com/gwpicard/mindspace.git
 cd mindspace
 
-# Set up environment
-uv venv --python 3.12
-source .venv/bin/activate
-uv pip install -e ".[dev]"
-
 # Configure
 cp .env.example .env
-# Edit .env and add your OpenAI API key
+# Edit .env and add your API keys (ANTHROPIC_API_KEY, OPENAI_API_KEY)
 
-# Initialize data directories
-ms admin init
+# Install dependencies
+uv sync
+cd frontend && npm install && cd ..
 
-# Capture your first items
+# Run both servers
+./run/dev.sh
+```
+
+Open http://localhost:5173. The web app provides conversations with Claude (organized into channels), semantic search across your corpus, and a resource library.
+
+### Production (single process)
+
+```bash
+cd frontend && npm run build && cd ..
+uv run uvicorn mindspace.web.app:create_app --factory --port 8000
+```
+
+The backend serves the built SPA — no separate frontend server needed. Open http://localhost:8000.
+
+### Devcontainer
+
+Open the project in VS Code or any devcontainer-compatible editor. The `.devcontainer/` config sets up Python 3.12, Node 22, uv, and Playwright automatically.
+
+### CLI
+
+The original CLI is still available for direct capture and search:
+
+```bash
+# Capture
 ms capture url "https://example.com/interesting-article" --tag ai --tag research
 ms capture thought --text "LLMs are changing how we approach software architecture"
-ms capture question "How will AI agents transform development workflows?" --domain AI
 
-# Search across everything
+# Search
 ms search query "artificial intelligence"
 ```
+
+## Web App
+
+The web interface is a SvelteKit SPA backed by a FastAPI API server.
+
+**Conversations** — Chat with Claude, grounded in your personal corpus. Conversations are organized into channels (topics/themes). Claude automatically detects and captures URLs you share.
+
+**Channels** — Group conversations by topic. Add/remove channels per conversation, edit channel names, or delete channels from the channel detail page.
+
+**Search** — Cmd+K opens semantic search across all conversations and resources. Hybrid retrieval (embeddings + BM25) via Reciprocal Rank Fusion.
+
+**Library** — Browse all captured resources (articles, repos, snippets, notes).
 
 ## Capture Types
 
@@ -54,81 +87,24 @@ Mindspace organizes captures into two streams:
 
 Every capture gets a ULID, is stored as immutable JSON, and is immediately embedded for semantic search.
 
-## Search
-
-```bash
-# Semantic search (hybrid: embeddings + BM25 keyword matching)
-ms search query "machine learning optimization"
-
-# Show more results
-ms search query "cooking recipes" --num 10
-
-# Include low-relevance matches
-ms search query "vague topic" --all
-
-# View full details of a capture
-ms search show <CAPTURE_ID>
-```
-
-Search uses **Reciprocal Rank Fusion (RRF)** to combine semantic similarity (OpenAI embeddings via ChromaDB) with keyword matching (BM25), producing better results than either method alone.
-
 ## Evaluation Framework
 
-Mindspace includes a built-in evaluation system for measuring and improving retrieval quality. Philosophy: **you can't improve what you can't measure**.
+Built-in evaluation system for measuring and improving retrieval quality. Philosophy: **you can't improve what you can't measure**.
 
 ```bash
-# Interactively create eval cases from real queries
-ms eval add-case
-
-# Run evaluation against your golden dataset
-ms eval run
-ms eval run --k 10 --verbose
-
-# Track improvement over time
-ms eval history
-
-# Compare last two runs (color-coded deltas)
-ms eval compare
-
-# View your golden dataset
-ms eval golden
-```
-
-### Improving retrieval workflow
-
-```bash
-ms eval run                    # 1. Baseline
-# ... make a change ...
-ms admin reindex               # 2. Rebuild embeddings
-ms eval run                    # 3. Measure
-ms eval compare                # 4. See the impact
+ms eval add-case              # Interactively create eval cases
+ms eval run                   # Run evaluation
+ms eval run --k 10 --verbose  # With options
+ms eval history               # Track improvement over time
+ms eval compare               # Compare last two runs
+ms eval golden                # View golden dataset
 ```
 
 Metrics tracked: Precision@k, Recall@k, MRR (Mean Reciprocal Rank), Hit Rate, and Negative Leakage.
 
 See [docs/eval-system.md](docs/eval-system.md) for full documentation.
 
-## Administration
-
-```bash
-ms admin init      # Create data directories
-ms admin stats     # Corpus statistics (counts by type/stream)
-ms admin reindex   # Wipe derived data and re-embed everything
-```
-
 ## Architecture
-
-Event-sourced with strict layer separation. Each layer depends only downward:
-
-```
-cli/         → imports eval/, pipelines/, core/
-eval/        → imports derived/, infra/, core/
-pipelines/   → imports derived/, capture/, infra/, core/
-derived/     → imports core/, infra/
-infra/       → imports core/
-capture/     → imports core/
-core/        → imports nothing
-```
 
 ```
 src/mindspace/
@@ -138,7 +114,17 @@ src/mindspace/
 ├── derived/       # Re-generable: embedding pipeline, chunking, text enrichment
 ├── eval/          # Evaluation: metrics, runner, history
 ├── pipelines/     # Orchestration: ingest, reindex
-└── cli/           # Typer CLI: capture, search, admin, eval
+├── cli/           # Typer CLI: capture, search, admin, eval
+└── web/           # FastAPI backend: conversations, channels, resources, search
+    ├── routers/   # API endpoints
+    ├── services/  # Chat (Claude SSE), resource processing
+    └── db/        # SQLAlchemy async models + engine (SQLite)
+
+frontend/          # SvelteKit SPA
+├── src/
+│   ├── lib/       # API client, stores (Svelte), components
+│   └── routes/    # Pages: home, conversation, channel, resource
+└── e2e/           # Playwright E2E tests
 ```
 
 ### Key Design Decisions
@@ -164,48 +150,34 @@ All settings via environment variables or `.env`:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `OPENAI_API_KEY` | — | OpenAI API key (required) |
+| `ANTHROPIC_API_KEY` | — | Anthropic API key (for Claude chat) |
+| `OPENAI_API_KEY` | — | OpenAI API key (for embeddings) |
 | `MINDSPACE_EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding model |
 | `MINDSPACE_DATA_DIR` | `./data` | Data storage directory |
 | `MINDSPACE_CHUNK_MAX_TOKENS` | `500` | Max words per chunk |
 | `MINDSPACE_CHUNK_OVERLAP_TOKENS` | `50` | Word overlap between chunks |
 | `MINDSPACE_HYBRID_SEARCH_ENABLED` | `True` | Enable BM25 + semantic fusion |
 
-## Data Storage
-
-All data lives under `data/` (gitignored):
-
-```
-data/
-├── raw/                    # Immutable capture JSON files (one per capture)
-├── index.jsonl             # Append-only capture index
-├── derived/
-│   ├── chroma/             # ChromaDB vector storage
-│   ├── registry.json       # Tracks which captures have been embedded
-│   └── bm25_corpus.json    # BM25 keyword index
-└── eval/
-    ├── golden.json          # Hand-curated evaluation dataset
-    └── history.jsonl        # Eval run history
-```
-
-Raw captures are the source of truth. Everything under `derived/` can be deleted and rebuilt with `ms admin reindex`.
-
 ## Development
 
 ```bash
-# Run tests (65 passing)
-pytest
+# Run both servers (backend + frontend)
+./run/dev.sh
 
-# Run specific test suites
+# Backend tests
+pytest
 pytest tests/eval/ -v           # Evaluation tests
 pytest tests/derived/ -v        # Chunking + embedding tests
 pytest tests/integration/ -v    # End-to-end tests
+
+# Frontend E2E tests (starts servers automatically)
+cd frontend && npm run test:e2e
 
 # Lint
 ruff check src/ tests/
 ```
 
-**Requirements:** Python 3.12+, OpenAI API key.
+**Requirements:** Python 3.12+, Node.js 22+, OpenAI API key, Anthropic API key.
 
 ## Roadmap
 
